@@ -1,0 +1,9 @@
+// Design tokens. Mirror critical eases in JS (gsap) and SCSS so motion matches.
+$bp-mobile: 812px;
+
+// Eases (cubic-bezier) — keep in sync with any JS gsap eases.
+$ease-out: cubic-bezier(0.4, 0, 0.2, 1);
+$ease-in-out: cubic-bezier(0.74, 0.27, 0.31, 0.67);
+
+$color-bg: #0e0e10;
+$color-fg: #f3f3f3;

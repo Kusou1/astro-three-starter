@@ -1,0 +1,50 @@
+---
+import '@/styles/global.scss'
+import { ClientRouter } from 'astro:transitions'
+import Nav from '@/components/Nav.astro'
+
+const {
+  title = 'astro-three-starter',
+  description = 'Astro + vanilla three persistent-canvas starter',
+} = Astro.props
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <!-- ClientRouter: intercepts link clicks + popstate, swaps DOM instead of
+         full reload. This is what lets the canvas below stay alive. -->
+    <ClientRouter />
+  </head>
+  <body>
+    <!-- 持久 3D 层：住在 LAYOUT 里、标了 transition:persist，所以它（连同 WebGPU
+         context）跨每次导航存活。vanilla 版用一个裸 <canvas>，由下面的 script 调
+         initCanvas3D() 初始化一次（不像 R3F 版是个 React island）。 -->
+    <div id="canvas-root" transition:persist>
+      <canvas></canvas>
+    </div>
+
+    <Nav />
+
+    <main>
+      <slot />
+    </main>
+
+    <script>
+      import { initCanvas3D } from '@/canvas/canvas3d'
+      import { initTransitions } from '@/lib/transitions'
+      import { initScroll } from '@/lib/scroll'
+      // module script：Astro 去重、只跑一次（不随 ClientRouter 导航重执行）。
+      // 三者各自幂等：canvas 只 init 一次，transitions/scroll 只注册一次监听。
+      initCanvas3D()
+      initTransitions()
+      initScroll()
+    </script>
+  </body>
+</html>

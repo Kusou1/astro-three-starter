@@ -1,0 +1,17 @@
+---
+import Base from '@/layouts/Base.astro'
+---
+
+<Base
+  title="Home — astro-r3f-starter"
+  description="Persistent WebGPU canvas across Astro navigations."
+>
+  <section class="page">
+    <h1 data-reveal>Home</h1>
+    <p data-reveal>
+      Navigate between pages. The cube behind keeps spinning and only changes
+      colour — it is never rebuilt. That continuity is the persistent WebGPU
+      canvas surviving a ClientRouter swap.
+    </p>
+  </section>
+</Base>
