@@ -1,9 +1,13 @@
 // Design tokens. Mirror critical eases in JS (gsap) and SCSS so motion matches.
 $bp-mobile: 812px;
 
-// Eases (cubic-bezier) — keep in sync with any JS gsap eases.
-$ease-out: cubic-bezier(0.4, 0, 0.2, 1);
-$ease-in-out: cubic-bezier(0.74, 0.27, 0.31, 0.67);
+// Eases (cubic-bezier) — keep these four in lockstep with src/utils/ease.js
+// (GSAP CustomEase) so a CSS transition and a GSAP tween on the same target
+// trace the identical curve.
+$ease: cubic-bezier(0.25, 0.74, 0.22, 0.99); // 主曲线（默认 .8s 过渡）
+$ease1: cubic-bezier(0.39, 0.575, 0.565, 1); // 柔和 ease-out
+$ease2: cubic-bezier(0.4, 0, 0.2, 1); // material standard
+$picEase: cubic-bezier(0.76, 0, 0.24, 1); // 图片 / clip 揭示
 
 $color-bg: #0e0e10;
 $color-fg: #f3f3f3;

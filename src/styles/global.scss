@@ -53,7 +53,7 @@ body {
     color: $color-fg;
     text-decoration: none;
     opacity: 0.6;
-    transition: opacity 0.3s $ease-out;
+    transition: opacity 0.3s $ease2;
 
     &.is-active,
     &:hover {
