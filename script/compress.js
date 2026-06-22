@@ -2,7 +2,7 @@
 //
 // Three asset classes, three policies:
 //   src/assets/texture/  → .webp q90 (three.js GPU textures, quality-first)
-//   src/assets/image/    → .webp q80, max edge 2560 (DOM <img>)
+//   src/assets/image(s)/ → .webp q80, max edge 2560 (DOM <img>)
 //   src/assets/video/    → VP9 .webm, 720p desktop + 540p mobile (needs ffmpeg)
 //
 // Outputs sit next to the source. Originals are left untouched — re-runnable.
@@ -38,7 +38,7 @@ const baseDir = path.resolve(__dirname, '..', process.argv[2] ?? 'src/assets')
  */
 const IMAGE_MAX_EDGE = 2560
 {
-    const files = await glob(`${baseDir}/image/**/*.{png,jpg,jpeg}`)
+    const files = await glob(`${baseDir}/{image,images}/**/*.{png,jpg,jpeg}`)
     console.log(`\n=== Images: ${files.length} file(s) ===`)
     for (const inputFile of files) {
         const outputFile = inputFile.replace(/\.(png|jpe?g)$/i, '.webp')
