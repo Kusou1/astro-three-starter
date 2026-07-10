@@ -1,15 +1,105 @@
-@use './variables' as *;
+// _utils(rem()/断点/flex) + _variables(颜色/ease) 由 astro.config.mjs additionalData
+// 自动注入每个 .scss（本文件与组件 <style>）→ 无需 @use 即可用 rem()/$var/@include。
 
-// ClientRouter wraps every swap in the View Transitions API, whose DEFAULT
-// full-page `root` crossfade flashes over the persistent canvas. Kill it —
-// page intros are driven by GSAP (lib/transitions.js), not this fade.
-::view-transition-old(root),
-::view-transition-new(root) {
-  animation: none;
+// ClientRouter wraps every swap in the View Transitions API. Page intros are
+// GSAP-driven (lib/transitions.js), so the browser's snapshot crossfade adds
+// nothing — and HURTS: during the snapshot window the live persistent canvas is
+// replaced by a capture that comes back BLANK, so the page bg shows through for
+// a frame → a faint white flash on every nav. Kill the animation on EVERY
+// view-transition pseudo (not just `root`, but the persisted canvas/chrome
+// groups too) so the snapshot window collapses to a single frame. (Pair with
+// `<ClientRouter fallback="swap" />` in Base.astro for OLD non-VT engines —
+// e.g. Sogou — so they swap instantly instead of running a simulated fade.)
+::view-transition-group(*),
+::view-transition-image-pair(*),
+::view-transition-old(*),
+::view-transition-new(*) {
+  animation: none !important;
+}
+
+// ── Hide the native ROOT scrollbar (cross-platform parity) ────────────────────
+// Windows draws a classic scrollbar that ALWAYS occupies ~15px of layout width;
+// macOS overlay scrollbars take no space. No standard way to get overlay
+// scrollbars on Windows Chromium, so hide the root scrollbar entirely — Windows
+// then matches macOS (no gutter, no content shift). Scrolling still works; the
+// custom #scrollbar overlay below is the visible affordance.
+html,
+body {
+  scrollbar-width: none; // Firefox
+  -ms-overflow-style: none; // legacy Edge / IE
+}
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none; // Chromium / WebKit
+}
+
+// ── Custom overlay scrollbar (vanilla, ported from solis4u) ───────────────────
+// Markup in Base.astro (transition:persist); behaviour wired by lib/scrollbar.js.
+// Full-height track flush to the right edge, mix-blend-mode exclusion so the
+// dark track + white thumb stay visible over any background. Starts hidden;
+// scrollbar.js fades it in on scroll and hides after idle via GSAP autoAlpha.
+#scrollbar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: rem(5);
+  height: 100vh;
+  background-color: #1a1a1a;
+  mix-blend-mode: exclusion;
+  z-index: 1200;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+#scrollbar-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  transform-origin: 0 0;
+  border-radius: rem(3);
+  background-color: #ffffff;
+}
+
+// ── Lenis smooth scroll ──────────────────────────────────────
+// Lenis toggles these classes on <html>. `.lenis-stopped { overflow: clip }` is
+// what makes lockScroll() (lib/scroll.js) actually freeze the page — not just
+// Lenis's wheel handling. Keep these when Lenis is in use.
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+.lenis.lenis-stopped {
+  overflow: clip;
 }
 
 * {
   box-sizing: border-box;
+}
+
+html {
+  // ── rem responsive scaling（桌面纯【等比】：rem 与全站裸 vw 用同一把视口尺）────
+  // 桌面全程 1rem = 100vw/1920*10（1920 稿等比）→ 浏览器缩放 / 系统 DPI 改变 CSS 视口宽时，
+  //   整设计只等比放缩、构图不变（缩放对排版≈no-op）。1920 宽 = 10px。rem()(_utils) 按此尺换算。
+  //   保底：上限 13px（>2496px 超宽屏封顶）；下限 4px 仅名义兜底——桌面最窄(813px)纯等比值
+  //   ≈4.23px 恒 >4，故 floor 在桌面【永不触发】（若触发则 rem 钉死而 vw 仍缩 → 脱钩=变形）。
+  //   缩放过头(<812px)交给移动端布局兜。
+  // < 812 : 1rem = 100vw/750*10（移动 750 稿）
+  font-size: clamp(4px, calc(100vw / 1920 * 10), 13px);
+  line-height: 1;
+
+  @include mobile {
+    font-size: clamp(5.5px, calc(100vw / 750 * 10), 8.12px);
+  }
 }
 
 html,
@@ -46,8 +136,8 @@ body {
   right: 0;
   z-index: 10;
   display: flex;
-  gap: 1.5rem;
-  padding: 1.25rem 2rem;
+  gap: rem(24);
+  padding: rem(20) rem(32);
 
   &__link {
     color: $color-fg;
@@ -68,20 +158,20 @@ main {
 }
 
 .page {
-  min-height: 100vh;
+  min-height: 100svh;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  max-width: 40rem;
-  padding: 0 2rem;
+  max-width: rem(640);
+  padding: 0 rem(32);
 
   h1 {
-    font-size: clamp(3rem, 8vw, 6rem);
-    margin: 0 0 1rem;
+    font-size: clamp(rem(48), 8vw, rem(96));
+    margin: 0 0 rem(16);
   }
 
   p {
-    font-size: 1.125rem;
+    font-size: rem(18);
     line-height: 1.6;
     opacity: 0.85;
   }

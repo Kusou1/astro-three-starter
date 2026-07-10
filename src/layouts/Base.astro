@@ -19,8 +19,12 @@ const {
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <!-- ClientRouter: intercepts link clicks + popstate, swaps DOM instead of
-         full reload. This is what lets the canvas below stay alive. -->
-    <ClientRouter />
+         full reload. This is what lets the canvas below stay alive.
+         fallback="swap": browsers WITHOUT the View Transitions API (e.g. Sogou /
+         older Chromium cores) otherwise get Astro's simulated CSS crossfade,
+         which flashes over the persistent canvas. Transitions are GSAP-driven,
+         so those browsers just swap the DOM instantly — no fade, no flash. -->
+    <ClientRouter fallback="swap" />
   </head>
   <body>
     <!-- 持久 3D 层：住在 LAYOUT 里、标了 transition:persist，所以它（连同 WebGPU
@@ -32,6 +36,13 @@ const {
 
     <Nav />
 
+    <!-- Custom overlay scrollbar (native root scrollbar hidden in global.scss).
+         transition:persist so it survives ClientRouter swaps; lib/scrollbar.js
+         wires the behaviour once. -->
+    <div id="scrollbar" transition:persist aria-hidden="true">
+      <div id="scrollbar-bar"></div>
+    </div>
+
     <main>
       <slot />
     </main>
@@ -40,11 +51,13 @@ const {
       import { initCanvas3D } from '@/canvas/canvas3d'
       import { initTransitions } from '@/lib/transitions'
       import { initScroll } from '@/lib/scroll'
+      import { initScrollBar } from '@/lib/scrollbar'
       // module script：Astro 去重、只跑一次（不随 ClientRouter 导航重执行）。
-      // 三者各自幂等：canvas 只 init 一次，transitions/scroll 只注册一次监听。
+      // 各自幂等：canvas 只 init 一次，transitions/scroll/scrollbar 只注册一次监听。
       initCanvas3D()
       initTransitions()
       initScroll()
+      initScrollBar()
     </script>
   </body>
 </html>
