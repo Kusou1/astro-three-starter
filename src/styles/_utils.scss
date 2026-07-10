@@ -1,0 +1,61 @@
+@use 'sass:math';
+@use 'sass:meta';
+
+// ── Breakpoints (single source of truth) ──────────────────
+// mobile : full mobile styles + rem switches to 750 design baseline
+// mid    : layout-only adjustments. rem baseline stays fixed at 10px here.
+// large  : viewport wider than 1920 design baseline — rem scales up.
+$bp-mobile: 812px;
+$bp-mid: 1000px;
+$bp-large: 2000px;
+
+// ── rem() helper ──────────────────────────────────────────
+// Converts design px (Figma at 1920 desktop / 750 mobile) to rem.
+// 1rem == 10px between 812~2000. Below 812 rem scales w/ 750 design.
+// Above 2000 rem scales w/ 1920 design. (html font-size scaling in global.scss)
+//
+// Usage: font-size: rem(64);   // unitless input (preferred)
+//        padding:  rem(20px);  // px input also works
+@function rem($value) {
+  @if meta.type-of($value) == 'number' {
+    @if math.is-unitless($value) {
+      @return math.div($value, 10) * 1rem;
+    }
+    @if math.unit($value) == 'px' {
+      @return math.div($value, 1px * 10) * 1rem;
+    }
+  }
+  @return $value;
+}
+
+// ── Breakpoint mixins ─────────────────────────────────────
+// Convention (from real projects): only touch @include mobile for the mobile
+// pass; keep the media block at the END of a rule's declarations so later
+// same-specificity selectors don't override it.
+@mixin mobile {
+  @media (max-width: $bp-mobile) {
+    @content;
+  }
+}
+@mixin mid {
+  @media (max-width: $bp-mid) {
+    @content;
+  }
+}
+@mixin large {
+  @media (min-width: $bp-large) {
+    @content;
+  }
+}
+
+// ── Flex helpers ──────────────────────────────────────────
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+@mixin flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}

@@ -1,5 +1,5 @@
 // Design tokens. Mirror critical eases in JS (gsap) and SCSS so motion matches.
-$bp-mobile: 812px;
+// Breakpoints live in _utils.scss (single source of truth); rem() also there.
 
 // Eases (cubic-bezier) — keep these four in lockstep with src/utils/ease.js
 // (GSAP CustomEase) so a CSS transition and a GSAP tween on the same target
