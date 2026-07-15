@@ -1,5 +1,6 @@
 import gsap from 'gsap'
 import { sceneStore } from '@/store/useSceneStore'
+import { stripBase } from '@/utils/basePath'
 
 // ── ClientRouter navigation lifecycle ───────────────────────────────────────
 // The hard, manual part of Astro + R3F. Registered ONCE (idempotent); the
@@ -8,8 +9,9 @@ import { sceneStore } from '@/store/useSceneStore'
 let registered = false
 
 function syncRoute() {
-  // Tell the bus which route is live → SceneSwitcher reacts.
-  sceneStore.getState().setRoute(window.location.pathname)
+  // Tell the bus which route is live → SceneSwitcher reacts. stripBase so the
+  // internal route model stays base-less on subdirectory deploys.
+  sceneStore.getState().setRoute(stripBase(window.location.pathname))
 }
 
 function runIntro() {

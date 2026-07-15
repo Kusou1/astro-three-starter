@@ -1,16 +1,19 @@
 ---
+import { withBase, stripBase } from '@/utils/basePath'
+
 const links = [
   { href: '/', label: 'Home' },
   { href: '/about', label: 'About' },
   { href: '/styleguide', label: 'Style Guide' },
 ]
-const path = Astro.url.pathname
+// Compare base-less (the route model is base-less); prefix hrefs going to the DOM.
+const path = stripBase(Astro.url.pathname)
 ---
 
 <nav class="nav">
   {
     links.map((l) => (
-      <a href={l.href} class:list={['nav__link', { 'is-active': path === l.href }]}>
+      <a href={withBase(l.href)} class:list={['nav__link', { 'is-active': path === l.href }]}>
         {l.label}
       </a>
     ))
