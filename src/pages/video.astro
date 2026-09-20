@@ -1,0 +1,106 @@
+---
+import Base from '@/layouts/Base.astro'
+import { withBase } from '@/utils/basePath'
+---
+
+<Base title="Video — starter">
+  <section class="video-demo">
+    <h1 data-reveal>Video intro</h1>
+    <p>桌面播放 4 秒，移动端播放 6 秒；画面播放到第 2 秒时，标题出现。</p>
+    <div class="video-demo__stage">
+      <video
+        muted playsinline preload="none"
+        poster={withBase('/video-demo/poster.jpg')}
+        data-desktop={withBase('/video-demo/desktop.mp4')}
+        data-mobile={withBase('/video-demo/mobile.mp4')}
+        data-poster={withBase('/video-demo/poster.jpg')}
+        data-mobile-poster={withBase('/video-demo/mobile-poster.jpg')}
+      ></video>
+      <strong class="video-demo__cue">Hello, motion.</strong>
+    </div>
+    <p class="video-demo__status" role="status">准备播放</p>
+    <button type="button">重新播放</button>
+    <a href={withBase('/')}>返回首页</a>
+  </section>
+</Base>
+
+<script>
+  import gsap from 'gsap'
+  import { createPageScope } from '@/lib/pageScope'
+  import { waitForPreloaded } from '@/utils/waitForPreloaded'
+  import { selectVideoSource, playVideoOnce } from '@/lib/video'
+
+  document.addEventListener('astro:page-load', () => {
+    const root = document.querySelector('.video-demo')
+    if (!root) return
+    const scope = createPageScope()
+    const video = root.querySelector('video')
+    const cue = root.querySelector('.video-demo__cue')
+    const status = root.querySelector('.video-demo__status')
+    const button = root.querySelector('button')
+    let playback
+    let tween
+    scope.add(() => { playback?.abort(); tween?.kill() })
+    const sources = {
+      desktop: video.dataset.desktop, mobile: video.dataset.mobile,
+      poster: video.dataset.poster, mobilePoster: video.dataset.mobilePoster,
+    }
+    selectVideoSource(video, sources)
+    const play = async () => {
+      playback?.abort()
+      const current = new AbortController()
+      playback = current
+      tween?.kill()
+      gsap.set(cue, { autoAlpha: 0, y: 16 })
+      selectVideoSource(video, sources)
+      video.currentTime = 0
+      status.textContent = '等待画面播放…'
+      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      const result = await playVideoOnce(video, {
+        signal: current.signal,
+        onStarted: () => { status.textContent = '正在播放' },
+        cues: [{ time: 2, callback: () => {
+          tween = gsap.to(cue, { autoAlpha: 1, y: 0, duration: reduced ? 0 : 0.6 })
+        } }],
+      })
+      if (current.signal.aborted || scope.signal.aborted) return
+      status.textContent = result.reason === 'ended'
+        ? '播放完成' : '未能完成播放，请点击重新播放'
+    }
+    button.addEventListener('click', play)
+    scope.add(() => button.removeEventListener('click', play))
+    scope.add(waitForPreloaded(() => {
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        status.textContent = '已减少动态效果，点击按钮播放'
+      } else play()
+    }, { signal: scope.signal }))
+  })
+</script>
+
+<style lang="scss">
+  .video-demo {
+    position: relative;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 120px 24px 48px;
+    display: grid;
+    gap: 24px;
+    &__stage { position: relative; }
+    video { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; }
+    &__cue {
+      visibility: hidden;
+      opacity: 0;
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      font-size: clamp(28px, 5vw, 64px);
+      color: white;
+      text-shadow: 0 2px 12px black;
+    }
+    button { color: inherit; border: 1px solid currentColor; padding: 12px; }
+    @include mobile {
+      video { aspect-ratio: 9 / 16; max-height: 65vh; }
+    }
+  }
+</style>

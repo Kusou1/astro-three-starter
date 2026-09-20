@@ -146,3 +146,30 @@ the caller owns playback and final inline-style cleanup.
 
 Run `npm test` for ready-state and page-cleanup regressions, followed by
 `npm run build` and browser checks on the preview server.
+
+## Video playback
+
+Open `/video` for a self-contained example (generated test footage: desktop 4s,
+mobile 6s). `src/lib/video.js` is shared between both starters:
+
+- `selectVideoSource(video, { desktop, mobile, poster, mobilePoster })` selects
+  at the 812px breakpoint before playback. It does not restart on resize; call
+  again before replay. Pass imported URLs or `withBase()` public paths.
+- `playVideoOnce(video, { signal, onStarted, cues })` requests muted inline
+  playback immediately. `onStarted` waits for the media clock to advance.
+  `cues: [{ time: 2, callback }]` fires once per run from media time.
+- The result is `{ reason, currentTime }`: `ended`, `blocked`, `error`,
+  `startup-timeout`, `timeout`, or `aborted`. Only `ended` means completion.
+  Startup defaults to 10s; after real playback starts the deadline uses the
+  remaining duration / playbackRate plus 1.5s. A stalled video fails instead
+  of unlocking an intro as though it had played.
+- Own each video with one AbortController. Abort on navigation or before replay;
+  cancellation pauses video and removes listeners, timers and frame callbacks.
+  Set `currentTime = 0` before replay. `loop` is disabled by the helper.
+- Poster remains available before playback. The demo offers a replay button on
+  failure and does not autoplay with reduced motion. WeixinJSBridgeReady retries
+  a pending attempt; autoplay permission still requires real-device validation.
+
+This is an optional page module, not a global Loading gate or a dual-buffer video
+transition system. GLB/video readiness is not automatically added to AssetsProvider.
+Frame callbacks use the [browser video-frame API](https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/requestVideoFrameCallback), with a media-clock polling fallback.
