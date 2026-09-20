@@ -176,3 +176,15 @@ main {
     opacity: 0.85;
   }
 }
+
+
+// Linked CSS supplies the first-frame state before island hydration.
+.reveal { opacity: 0; }
+[data-reveal] { opacity: 0; }
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal], .reveal, .reveal__word, .splittext__token {
+    opacity: 1;
+    visibility: visible;
+    filter: none;
+  }
+}

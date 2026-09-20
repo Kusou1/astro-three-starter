@@ -91,3 +91,58 @@ src/
 - **Vanilla JS,无 TS strict**。`.astro` frontmatter 那点 TS-ish 躲不掉(只是页面壳)。
 - SCSS + tokens in `_variables.scss`。单 canvas。Zustand vanilla 当总线。
 - 决策日志在 `~/.claude/CLAUDE.md` → 「前端栈默认:Astro 优先」。
+
+
+## Page lifecycle and loading
+
+Page-owned animations, ScrollTriggers, observers, subscriptions and async waits
+must register their cleanup. Persistent Canvas and Loading animations manage
+their own lifetime and are not cleared by navigation.
+
+```js
+import gsap from 'gsap'
+import { createPageScope } from '@/lib/pageScope'
+
+const scope = createPageScope()
+const context = gsap.context(() => {
+  // Create this page's tweens and ScrollTriggers here.
+})
+scope.add(() => context.revert())
+// Also register observers, RAF cancellation and subscriptions with scope.add().
+// For asynchronous callbacks, check scope.signal.aborted before creating work.
+// React effects return scope.dispose; Astro before-swap also disposes it once.
+```
+
+Both starters use a vanilla preloader store with explicit phases:
+`disabled →` immediate entry, or `loading → revealing → ready` when enabled.
+Set `features.preloader` in `src/config/features.js` before starting the app;
+progress 0 never means disabled. The default is false.
+
+Enabling loading requires an asset loader and a persistent overlay: the loader
+calls `preloaderStore.getState().setPreloaded(true)` after its assets settle;
+the overlay calls `setPreloadedAnimated(true)` after its exit animation. Merely
+turning on the feature without those producers intentionally leaves intros waiting.
+The R3F starter supplies AssetsProvider and Preloader; the vanilla starter supplies
+the same store/wait contract for a project-specific loader and overlay.
+
+```js
+import { waitForPreloaded } from '@/utils/waitForPreloaded'
+
+scope.add(waitForPreloaded(() => {
+  // Create the current page's intro and register its cleanup.
+}, { signal: scope.signal }))
+```
+
+Completion is stored, so late hydration and return navigation read the current
+state. Waits cancel on page exit. Progress is monotonic; loading is one initial
+session, not automatically reset for every navigation.
+
+`src/lib/reveal.js` supplies the shared DOM reveal engine. Desktop uses blur;
+<=812px uses opacity without blur or translation; reduced motion shows content
+immediately. Completion removes filter/will-change, and breakpoint changes are
+handled by GSAP matchMedia. `[data-reveal]` uses this engine for page intros;
+R3F SplitText/Reveal delegate their automatic animations to it. With `intro=true`,
+the caller owns playback and final inline-style cleanup.
+
+Run `npm test` for ready-state and page-cleanup regressions, followed by
+`npm run build` and browser checks on the preview server.
