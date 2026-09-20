@@ -14,17 +14,21 @@ the cross-island bus.
 > *WebGPU canvas 跨 ClientRouter 导航,context 不重建吗?* 先在 Chrome **和** Safari 确认这条,
 > 再往上搭真东西。
 
+## Versions
+
+Astro 7.3.3; Node 22.12+ (`.nvmrc`: 22.22.2); sharp 0.35.4.
+
 ## Run
 
 ```bash
-nvm use            # node 22 (>=20)
-npm install
+nvm use            # Node 22.22.2 (minimum 22.12.0)
+npm ci
 npm run dev        # http://localhost:4321
 ```
 
 ## ✅ 验收测试（先做这个）
 
-起 dev,分别在 **Chrome** 和 **Safari**:
+先运行 `npm run build && npm run preview`，打开 preview 地址，分别在 **Chrome** 和 **Safari**:
 
 1. **持久性** — 盯着旋转盒。点 `Home → About → Style Guide`。盒子必须**保持平滑旋转**——不闪、不归零。归零 = WebGPU context 被重建 = 该浏览器持久失败。
 2. **总线** — 盒子**按路由变色**(橙/蓝/紫)。证明 layout 的 script 和 canvas 模块共享同一个 store。
