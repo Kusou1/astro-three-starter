@@ -173,3 +173,7 @@ mobile 6s). `src/lib/video.js` is shared between both starters:
 This is an optional page module, not a global Loading gate or a dual-buffer video
 transition system. GLB/video readiness is not automatically added to AssetsProvider.
 Frame callbacks use the [browser video-frame API](https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/requestVideoFrameCallback), with a media-clock polling fallback.
+
+## 3D asset production
+
+`npm run assets:3d` produces Meshopt GLB / KTX2 from `source-assets/`. See [3D resource pipeline](docs/3d-assets.md) for the manifest, color contracts, runtime loaders and version audit. `npm run build` syncs the matching Three Basis decoder pair automatically.

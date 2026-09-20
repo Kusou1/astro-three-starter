@@ -10,7 +10,9 @@
     "astro": "astro",
     "compress": "node script/compress.js src/assets/",
     "subset-font": "python3 script/subset-font.py",
-    "test": "node --test test/*.test.mjs"
+    "test": "node --test test/*.test.mjs",
+    "assets:3d": "node script/assets-3d.js",
+    "prebuild": "node script/sync-decoders.js"
   },
   "engines": {
     "node": ">=22.12.0"
@@ -23,7 +25,11 @@
     "zustand": "^5.0.0"
   },
   "devDependencies": {
+    "@gltf-transform/core": "^4.5.0",
+    "@gltf-transform/extensions": "^4.5.0",
+    "@gltf-transform/functions": "^4.5.0",
     "glob": "^11.1.0",
+    "meshoptimizer": "^1.2.0",
     "sass": "^1.80.0",
     "sharp": "^0.35.4"
   }

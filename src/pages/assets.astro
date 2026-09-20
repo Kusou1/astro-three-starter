@@ -1,0 +1,59 @@
+---
+import { withBase } from '@/utils/basePath'
+---
+<!doctype html>
+<html lang="zh-CN">
+  <head><meta charset="utf-8" /><meta name="viewport" content="width=device-width" /><title>3D asset acceptance</title></head>
+  <body>
+    <h1>3D 资源验证</h1>
+    <p>sRGB 自动解码 / 线性数据 / shader 手动解码。左右应同为 128 灰，中间约 188 灰。</p>
+    <canvas width="900" height="300"></canvas>
+    <p id="status" role="status">加载中</p>
+    <a href={withBase('/assets?webgl=1')}>WebGL2 fallback</a> · <a href={withBase('/assets')}>WebGPU</a> · <a href={withBase('/')}>首页</a>
+    <script>
+      import * as THREE from 'three/webgpu'
+      import { texture, sRGBTransferEOTF } from 'three/tsl'
+      import { createAssetLoaders } from '@/lib/assets3d'
+      import { withBase } from '@/utils/basePath'
+      const status = document.querySelector('#status')
+      async function run() {
+        const renderer = new THREE.WebGPURenderer({ canvas: document.querySelector('canvas'), forceWebGL: new URLSearchParams(location.search).has('webgl') })
+        await renderer.init()
+        renderer.setSize(900, 300, false)
+        renderer.toneMapping = THREE.NoToneMapping
+        const loaders = createAssetLoaders(renderer)
+        const scene = new THREE.Scene()
+        const camera = new THREE.OrthographicCamera(-3, 3, 1, -1, .1, 10)
+        camera.position.z = 2
+        const results = []
+        for (const [index, color] of ['srgb', 'linear', 'srgb-manual'].entries()) {
+          const model = await loaders.loadModel(withBase('/assets-3d/demo/plane.glb'))
+          const map = await loaders.loadTexture(withBase(`/assets-3d/demo/${color}.ktx2`), { color })
+          const material = new THREE.MeshBasicNodeMaterial({ map })
+          if (color === 'srgb-manual') material.colorNode = sRGBTransferEOTF(texture(map).rgb)
+          model.scene.traverse((child) => {
+            if (child.isMesh) { child.material.dispose(); child.material = material }
+          })
+          model.scene.position.x = (index - 1) * 2
+          model.scene.scale.setScalar(.85)
+          scene.add(model.scene)
+          results.push({ color, compressed: map.isCompressedTexture, colorSpace: map.colorSpace })
+        }
+        // The mismatched metadata path must reject, rather than silently double-decode.
+        let rejected = false
+        try { await loaders.loadTexture(withBase('/assets-3d/demo/srgb.ktx2'), { color: 'srgb-manual' }) } catch { rejected = true }
+        await renderer.renderAsync(scene, camera)
+        loaders.dispose()
+        const result = { backend: renderer.backend.isWebGPUBackend ? 'webgpu' : 'webgl', textures: results, rejected }
+        status.textContent = JSON.stringify(result)
+        status.setAttribute('data-ready', 'true')
+      }
+      run().catch((error) => { status.textContent = error.stack; status.setAttribute('data-error', 'true') })
+    </script>
+  </body>
+</html>
+<style>
+  body { margin: 32px; background: #eee; color: #222; font: 16px system-ui; }
+  canvas { display: block; width: min(900px, 100%); height: auto; background: black; }
+  #status { overflow-wrap: anywhere; }
+</style>

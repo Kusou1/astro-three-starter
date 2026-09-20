@@ -1,0 +1,25 @@
+{
+  "models": [
+    {
+      "input": "demo/plane.glb",
+      "output": "demo/plane.glb"
+    }
+  ],
+  "textures": [
+    {
+      "input": "demo/gray.png",
+      "output": "demo/srgb.ktx2",
+      "color": "srgb"
+    },
+    {
+      "input": "demo/gray.png",
+      "output": "demo/linear.ktx2",
+      "color": "linear"
+    },
+    {
+      "input": "demo/gray.png",
+      "output": "demo/srgb-manual.ktx2",
+      "color": "srgb-manual"
+    }
+  ]
+}
