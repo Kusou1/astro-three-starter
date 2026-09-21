@@ -78,3 +78,16 @@ loader.dispose() 只释放转码 worker，模型 geometry/material/texture 由�
 - `linear + srgb primaries` 会被 Three 识别为 LinearSRGBColorSpace；加载入口接受它，再为显式解码模式设 NoColorSpace。不能将它误判为已硬件解码。
 
 后续按项目需要将 createAssetLoaders 接入持久 renderer 的资源所有者及 Loading gate；starter 不默认塞入客户模型，不再引入 three-stdlib KTX2 补丁。Three r186 / Fiber / Drei 升级另作独立渲染回归。
+
+## 2026-09-21：3D 依赖升级
+
+- 当前 Three 0.186.0；R3F starter 为 Fiber 9.7.0 / Drei 10.7.8。React 与 React DOM 限定 `~19.2.7`，实际安装 19.2.8；Fiber 9.7 的 peer 范围是 `>=19 <19.3`，不使用 force/legacy-peer-deps 绕过。
+- 资源验证页在 `await renderer.init()` 后调用 `renderer.render()`，移除已弃用的 renderAsync。Basis JS/WASM 随 prebuild 同步为 0.186.0 配对；清理自有 basis 目录中旧 semver 子目录，避免旧 worker 继续进入 dist。
+- R3F Canvas 显式配置 `{ enabled: false, type: THREE.PCFShadowMap }`，替代 R3F 的 PCFSoftShadowMap 默认值，同时保持阴影关闭。
+- 最新 Drei View 源码仍使用 bottom-up 坐标，保留自写 View；没有照版本号猜测旧问题已解决。
+- 两库测试与构建通过；Chrome 中跨 ClientRouter 导航复用同一 Canvas 并持续提交 GPU 帧。资源验收页在 WebGPU/WebGL2 四组均得到 128/188/128 灰阶，错误 metadata 会 reject。
+- 临时双 View 测试在两个后端均逐像素对齐 DOM：完整 rect 300×240；滚动 280px 后，第一块裁为 300×140，第二块仍为 300×240。临时测试页面不作为生产路由保留。
+- 上游提示仍有两项：Fiber 9.7 内部使用 Three.Clock；SSR 构建加载 Fiber 的 CJS 入口时触发 Three require 弃用提示。未 patch node_modules，也未屏蔽提示；本次运行通过，但后续版本移除 API 前需跟进 Fiber。
+- 本次未覆盖 Safari / iOS / 微信真机。shuyun、lifeSciences 未升级。
+
+参考：[Three 迁移指南](https://github.com/mrdoob/three.js/wiki/Migration-Guide)、[Fiber 9.7](https://github.com/pmndrs/react-three-fiber/releases/tag/v9.7.0)、[Drei 10.7.8](https://github.com/pmndrs/drei/releases/tag/v10.7.8)。

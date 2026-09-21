@@ -1,6 +1,8 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { mkdtemp, rm, readFile } from 'node:fs/promises'
+import { mkdtemp, rm, readFile, mkdir, writeFile, readdir } from 'node:fs/promises'
+import { execFileSync } from 'node:child_process'
+import { fileURLToPath } from 'node:url'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { Document, NodeIO } from '@gltf-transform/core'
@@ -8,7 +10,7 @@ import { ALL_EXTENSIONS } from '@gltf-transform/extensions'
 import { MeshoptDecoder } from 'meshoptimizer'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { MeshoptDecoder as RuntimeDecoder } from 'three/addons/libs/meshopt_decoder.module.js'
-import { compressModel, textureArgs, within } from '../script/assets-3d.js'
+import { compressModel, textureArgs, within, threeRoot, threeVersion } from '../script/assets-3d.js'
 
 test('Meshopt round trip preserves FLOAT positions, vertex order, transforms, morph and animation', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'starter-assets-'))
@@ -41,7 +43,7 @@ test('Meshopt round trip preserves FLOAT positions, vertex order, transforms, mo
     assert.deepEqual(decodedPrimitive.listTargets()[0].getAttribute('POSITION').getArray(), morph.getArray())
     assert.equal(decodedPrimitive.getAttribute('POSITION').getComponentType(), 5126)
     assert.deepEqual(decoded.getRoot().listAnimations()[0].listSamplers()[0].getOutput().getArray(), sampler.getOutput().getArray())
-    // Decode with the actual r180 browser decoder too: newer encoder output must remain compatible.
+    // Decode with the installed Three browser decoder too: newer encoder output must remain compatible.
     const bytes = await readFile(output)
     const gltf = await new GLTFLoader().setMeshoptDecoder(RuntimeDecoder).parseAsync(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), '')
     let runtimeMesh
@@ -57,4 +59,22 @@ test('texture colors are explicit and paths stay in production directories', () 
   assert.equal(textureArgs('in', 'out', 'srgb')[7], 'srgb')
   assert.equal(textureArgs('in', 'out', 'srgb-manual')[7], 'linear')
   assert.throws(() => within('/project/source-assets', '../public/raw.glb'))
+})
+
+
+test('decoder sync publishes a matching pair and removes obsolete generated versions', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'starter-decoders-'))
+  try {
+    const basis = join(dir, 'public/assets-3d/basis')
+    await mkdir(join(basis, '0.1.0'), { recursive: true })
+    await writeFile(join(basis, '0.1.0/stale.js'), 'stale')
+    await writeFile(join(basis, 'README.md'), 'keep')
+    await mkdir(join(dir, 'src/config'), { recursive: true })
+    execFileSync(process.execPath, [fileURLToPath(new URL('../script/sync-decoders.js', import.meta.url))], { cwd: dir })
+    assert.deepEqual((await readdir(basis)).sort(), [threeVersion, 'README.md'].sort())
+    for (const file of ['basis_transcoder.js', 'basis_transcoder.wasm']) {
+      assert.deepEqual(await readFile(join(basis, threeVersion, file)), await readFile(join(threeRoot, 'examples/jsm/libs/basis', file)))
+    }
+    assert.equal(JSON.parse(await readFile(join(dir, 'src/config/assetDecoder.json'))).version, threeVersion)
+  } finally { await rm(dir, { recursive: true, force: true }) }
 })

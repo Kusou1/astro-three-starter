@@ -42,7 +42,7 @@ import { withBase } from '@/utils/basePath'
         // The mismatched metadata path must reject, rather than silently double-decode.
         let rejected = false
         try { await loaders.loadTexture(withBase('/assets-3d/demo/srgb.ktx2'), { color: 'srgb-manual' }) } catch { rejected = true }
-        await renderer.renderAsync(scene, camera)
+        renderer.render(scene, camera)
         loaders.dispose()
         const result = { backend: renderer.backend.isWebGPUBackend ? 'webgpu' : 'webgl', textures: results, rejected }
         status.textContent = JSON.stringify(result)

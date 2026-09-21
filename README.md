@@ -16,6 +16,8 @@ the cross-island bus.
 
 ## Versions
 
+Three 0.186.0.
+
 Astro 7.3.3; Node 22.12+ (`.nvmrc`: 22.22.2); sharp 0.35.4.
 
 ## Run
